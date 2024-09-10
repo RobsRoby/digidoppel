@@ -1,0 +1,101 @@
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    color: #2b343b;
+    background: url('bg.jpg') no-repeat center center fixed;
+    background-size: cover;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.container {
+    text-align: center;
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    align-items: center;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+#avatarCanvas { 
+    border-radius: 50%; 
+    background-color: #4B9CFF;
+    background: url('bg_zoom.jpg') no-repeat center center;
+    background-size: cover;
+    margin: 20px auto; 
+    display: block; 
+    position: relative; 
+    z-index: 0; 
+}
+
+#videoElement { 
+    position: absolute; 
+    top: 10px; 
+    left: 10px; 
+    width: 200px; 
+    height: 150px; 
+    object-fit: cover; 
+    border: 2px solid #f8f9fa; 
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    border-radius: 10px; 
+    z-index: 1; 
+}
+
+.file-loader {
+    position: relative;
+    display: inline-block;
+}
+
+.file-label {
+    display: inline-block;
+    background-color: #f7c374;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.file-label i {
+    margin-right: 8px;
+}
+
+#fileUploader {
+    display: none;
+}
+
+/* Style the recording controls container */
+.recording-controls {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    z-index: 2;
+}
+
+.recording-controls .btn {
+    margin: 5px;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    background-color: #fb9178;
+    color: #fff;
+}
+
+.recording-controls .btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+/* Hide the video preview if not recorded */
+#recordingPreview {
+    display: none;
+}
