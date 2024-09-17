@@ -1,10 +1,9 @@
 <img src="https://github.com/RobsRoby/digidoppel/blob/main/icon-text.png" alt="PomoPets Logo" width="300">
 
-DigiDoppel is a JavaScript application that leverages TensorFlow and Three.js to create a live 3D avatar of your face. By utilizing face mesh technology, DigiDoppel allows you to generate a dynamic and interactive digital clone of yourself in real-time.
+DigiDoppel is a JavaScript application that leverages TensorFlow to create a live avatar of your face. By utilizing face mesh technology, DigiDoppel allows you to generate a dynamic and interactive digital avatar in real-time.
 
 ## Features
 - **Live Face Mesh**: Uses TensorFlow's face mesh technology to track facial features and movements in real time.
-- **3D Avatar**: Creates a 3D model of your face using Three.js, providing a live avatar experience.
 - **Real-Time Interaction**: Your avatar updates in real-time as you move and change expressions.
 - **Local or Web Server Support**: Can be hosted on a local server or deployed on the web for easy access.
 

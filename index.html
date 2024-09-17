@@ -10,15 +10,6 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
-    <!-- Import maps for Three.js -->
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.module.js",
-                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.152.0/examples/jsm/"
-            }
-        }
-    </script>
     <!-- Load Mediapipe and its dependencies using script tags -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
@@ -30,7 +21,43 @@
     <video id="videoElement" autoplay></video>
     <div class="container">
         <h1 class="display-4"><img src="icon-text.png" height="200px"></h1>
-        <p class="lead"> Your Virtual Twin, Secure and Personalized.</p>
+        <p class="lead">Your Virtual Twin, Secure and Personalized.</p>
+
+        <!-- Avatar Selection Section -->
+        <div class="avatar-selection">
+            <h2>Select Your Avatar</h2>
+            <div class="avatar-buttons">
+                <button class="avatar-button" data-avatar="alan">
+                    <img src="avatars/original/alan.png" alt="Alan" class="avatar-img">
+                    Alan
+                </button>
+                <button class="avatar-button" data-avatar="elmo">
+                    <img src="avatars/original/elmo.png" alt="Elmo" class="avatar-img">
+                    Elmo
+                </button>
+                <button class="avatar-button" data-avatar="evelyn">
+                    <img src="avatars/original/evelyn.png" alt="Evelyn" class="avatar-img">
+                    Evelyn
+                </button>
+                <button class="avatar-button" data-avatar="harry">
+                    <img src="avatars/original/harry.png" alt="Harry" class="avatar-img">
+                    Harry
+                </button>
+                <button class="avatar-button" data-avatar="lia">
+                    <img src="avatars/original/lia.png" alt="Lia" class="avatar-img">
+                    Lia
+                </button>
+                <button class="avatar-button" data-avatar="lina">
+                    <img src="avatars/original/lina.png" alt="Lina" class="avatar-img">
+                    Lina
+                </button>
+            </div>
+        </div>
+
+        <!-- Image element for the base image -->
+        <img id="baseImage" src="avatars/alan.png" width="300" height="300" hidden>
+        
+        <!-- Canvas for drawing the face mesh -->
         <canvas id="avatarCanvas" width="300" height="300"></canvas>
         
         <!-- File uploader with custom design -->
@@ -46,125 +73,198 @@
             <button id="stopRecording" class="btn" disabled><i class="fas fa-stop"></i> Stop</button>
             <video id="recordingPreview" controls width="300"></video>
         </div>
-        
     </div>
 
-    <script type="module">
-        import * as THREE from 'three';
-        import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
-    
+    <script>
         const avatarCanvas = document.getElementById('avatarCanvas');
         const videoElement = document.getElementById('videoElement');
         const fileUploader = document.getElementById('fileUploader');
-    
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, avatarCanvas.width / avatarCanvas.height, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ canvas: avatarCanvas, alpha: true });
-        renderer.setSize(avatarCanvas.width, avatarCanvas.height);
-        camera.position.z = 240;
-    
-        const loader = new FBXLoader();
-        let faceModel;
-    
-        loader.load('head.fbx', (object) => {
-            faceModel = object;
-            scene.add(faceModel);
-        });
-    
-        const light = new THREE.AmbientLight(0x404040,30);
-        scene.add(light);
-    
-        function onResults(results) {
-            if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0 && faceModel) {
-                const landmarks = results.multiFaceLandmarks[0];
-    
-                const nose = landmarks[1];
-                faceModel.position.set((nose.x - 0.5) * 2, -(nose.y + 5) * 2, 0);
-    
-                const leftCheek = landmarks[234];
-                const rightCheek = landmarks[454];
-                const faceWidth = Math.sqrt(Math.pow(leftCheek.x - rightCheek.x, 2) + Math.pow(leftCheek.y - rightCheek.y, 2));
-                faceModel.scale.set(faceWidth, faceWidth, faceWidth);
-            }
-            renderer.render(scene, camera);
+        const baseImage = document.getElementById('baseImage');
+        const ctx = avatarCanvas.getContext('2d');
+
+        // Set Alan as default avatar
+        const defaultAvatarName = 'alan';
+        baseImage.src = `avatars/${defaultAvatarName}.png`;
+
+        // Get the default avatar button
+        const defaultButton = document.querySelector(`.avatar-button[data-avatar="${defaultAvatarName}"]`);
+
+        // Programmatically click the default button to apply its styles
+        if (defaultButton) {
+            defaultButton.classList.add('active'); // Ensure the default button has active styles
         }
-    
+
+        // Handle avatar button clicks
+        const avatarButtons = document.querySelectorAll('.avatar-button');
+
+        avatarButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const avatarName = button.getAttribute('data-avatar');
+                baseImage.src = `avatars/${avatarName}.png`;
+
+                // Update active class
+                avatarButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+            });
+        });
+
+        function onResults(results) {
+            ctx.clearRect(0, 0, avatarCanvas.width, avatarCanvas.height);
+            
+            if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+                const landmarks = results.multiFaceLandmarks[0];
+
+                // Determine bounding box based on face landmarks for scaling
+                const topLeft = { x: Infinity, y: Infinity };
+                const bottomRight = { x: -Infinity, y: -Infinity };
+
+                landmarks.forEach((landmark) => {
+                    const x = landmark.x * avatarCanvas.width;
+                    const y = landmark.y * avatarCanvas.height;
+
+                    if (x < topLeft.x) topLeft.x = x;
+                    if (y < topLeft.y) topLeft.y = y;
+                    if (x > bottomRight.x) bottomRight.x = x;
+                    if (y > bottomRight.y) bottomRight.y = y;
+                });
+
+                // Calculate width and height of face bounding box
+                const faceWidth = bottomRight.x - topLeft.x;
+                const faceHeight = bottomRight.y - topLeft.y;
+                
+                // Adjust the base image size and position
+                const scaleFactor = 1.5; // Adjust this to control the "pinch" effect
+                const imgWidth = faceWidth * scaleFactor;
+                const imgHeight = faceHeight * scaleFactor;
+                const imgX = topLeft.x - (imgWidth - faceWidth) / 2;
+                const imgY = topLeft.y - (imgHeight - faceHeight) / 2;
+
+                // Draw the base image with adjusted size and position
+                ctx.drawImage(baseImage, imgX, imgY, imgWidth, imgHeight);
+
+                // Set properties for rounded edges
+                ctx.strokeStyle = '#505050';
+                ctx.fillStyle = '#505050'; // Set fill color
+                ctx.lineWidth = 1;
+                ctx.lineJoin = 'round'; // Makes the corners rounded
+                ctx.lineCap = 'round';  // Makes the ends of lines rounded
+
+                const eyeYOffset = 0.12 * avatarCanvas.height; // Lower eye points by 5% of canvas height
+
+                // Draw and fill left eye (landmarks 33 to 133) with lowered Y offset
+                drawAndFillFeature([33, 160, 158, 133, 153, 144, 145, 153], landmarks, eyeYOffset);
+
+                // Draw and fill right eye (landmarks 362 to 263) with lowered Y offset
+                drawAndFillFeature([362, 385, 387, 263, 373, 380, 374, 373], landmarks, eyeYOffset);
+
+                // Draw and fill mouth (landmarks 61 to 291) without Y offset
+                drawAndFillFeature([61, 185, 40, 39, 37, 0, 267, 269, 270, 409, 291], landmarks);
+            }
+        }
+
+        // Function to draw and fill the feature between the specified landmarks with optional Y offset
+        function drawAndFillFeature(landmarkIndices, landmarks, yOffset = 0) {
+            ctx.beginPath();
+            const start = landmarks[landmarkIndices[0]];
+            ctx.moveTo(start.x * avatarCanvas.width, (start.y * avatarCanvas.height) + yOffset);
+            
+            landmarkIndices.forEach((index) => {
+                const landmark = landmarks[index];
+                const x = landmark.x * avatarCanvas.width;
+                const y = (landmark.y * avatarCanvas.height) + yOffset; // Apply Y offset
+                ctx.lineTo(x, y);
+            });
+
+            ctx.closePath();
+            ctx.fill(); // Fill the closed path with black
+            ctx.stroke(); // Optionally, stroke the outline of the filled path
+        }
+
         async function loadFaceMeshModel() {
             const faceMesh = new FaceMesh({
                 locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
             });
-    
+
             faceMesh.setOptions({
                 maxNumFaces: 1,
                 refineLandmarks: true,
                 minDetectionConfidence: 0.5,
                 minTrackingConfidence: 0.5
             });
-    
+
             faceMesh.onResults(onResults);
-    
+
             videoElement.srcObject = await navigator.mediaDevices.getUserMedia({ video: true });
             const cameraMP = new Camera(videoElement, {
                 onFrame: async () => await faceMesh.send({ image: videoElement }),
                 width: 640,
                 height: 480
             });
-    
+
             cameraMP.start();
         }
-    
-        loadFaceMeshModel();
 
         // Handle file upload and change avatar background
         fileUploader.addEventListener('change', (event) => {
             const file = event.target.files[0];
             const reader = new FileReader();
             reader.onload = function(e) {
-                avatarCanvas.style.backgroundImage = `url(${e.target.result})`;
+                const backgroundImageUrl = e.target.result;
+                
+                // Create an Image object
+                const backgroundImage = new Image();
+                backgroundImage.src = backgroundImageUrl;
+
+                backgroundImage.onload = function() {
+                    // Redraw the canvas with the new background image
+                    ctx.clearRect(0, 0, avatarCanvas.width, avatarCanvas.height);
+                    ctx.drawImage(backgroundImage, 0, 0, avatarCanvas.width, avatarCanvas.height);
+                }
             }
             reader.readAsDataURL(file);
         });
-    </script>
 
-    <script>
-    let mediaRecorder;
-    let recordedChunks = [];
+        loadFaceMeshModel();
 
-    const startRecordingButton = document.getElementById('startRecording');
-    const stopRecordingButton = document.getElementById('stopRecording');
-    const recordingPreview = document.getElementById('recordingPreview');
+        // Recording
+        let mediaRecorder;
+        let recordedChunks = [];
 
-    startRecordingButton.addEventListener('click', () => {
-        startRecordingButton.disabled = true;
-        stopRecordingButton.disabled = false;
-        
-        const canvasStream = avatarCanvas.captureStream(30); // Adjust FPS if necessary
-        mediaRecorder = new MediaRecorder(canvasStream, {
-            mimeType: 'video/webm; codecs=vp9'
+        const startRecordingButton = document.getElementById('startRecording');
+        const stopRecordingButton = document.getElementById('stopRecording');
+        const recordingPreview = document.getElementById('recordingPreview');
+
+        startRecordingButton.addEventListener('click', () => {
+            startRecordingButton.disabled = true;
+            stopRecordingButton.disabled = false;
+            
+            const canvasStream = avatarCanvas.captureStream(30);
+            mediaRecorder = new MediaRecorder(canvasStream, {
+                mimeType: 'video/webm; codecs=vp9'
+            });
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                const videoURL = URL.createObjectURL(blob);
+                recordingPreview.src = videoURL;
+                recordingPreview.style.display = 'block'; // Ensure preview is visible
+                recordedChunks = []; // Reset chunks for next recording
+            };
+
+            mediaRecorder.start();
         });
 
-        mediaRecorder.ondataavailable = (event) => {
-            if (event.data.size > 0) {
-                recordedChunks.push(event.data);
-            }
-        };
-
-        mediaRecorder.onstop = () => {
-            const blob = new Blob(recordedChunks, { type: 'video/webm' });
-            const videoURL = URL.createObjectURL(blob);
-            recordingPreview.src = videoURL;
-            recordingPreview.style.display = 'block'; // Ensure preview is visible
-            recordedChunks = []; // Reset chunks for next recording
-        };
-
-        mediaRecorder.start();
-    });
-
-    stopRecordingButton.addEventListener('click', () => {
-        startRecordingButton.disabled = false;
-        stopRecordingButton.disabled = true;
-        mediaRecorder.stop();
-    });
+        stopRecordingButton.addEventListener('click', () => {
+            startRecordingButton.disabled = false;
+            stopRecordingButton.disabled = true;
+            mediaRecorder.stop();
+        });
     </script>
 
 </body>
